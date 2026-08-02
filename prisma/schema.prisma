@@ -6,3 +6,194 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+/**
+ * ------------------------------------------------------------
+ */
+/**
+ * ---------------------------- ENUMS -------------------------
+ */
+/**
+ * ------------------------------------------------------------
+ */
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  DELETED
+}
+
+enum OrderStatus {
+  PENDING
+  COOKING
+  READY_FOR_PICKUP
+  DELIVERING
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+/**
+ * ------------------------------------------------------------
+ */
+/**
+ * ---------------------------- MODELS ------------------------
+ */
+/**
+ * ------------------------------------------------------------
+ */
+
+model User {
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+
+  firstName String @map("first_name")
+  lastName  String @map("last_name")
+  phone     String
+
+  role   UserRole   @default(USER) @map("role")
+  status UserStatus @default(ACTIVE) @map("status")
+
+  isVerified Boolean @default(false) @map("is_verified")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sessions Sessions[] @relation("UserSessions")
+  cart     Cart?      @relation("UserCart")
+  orders   Order[]    @relation("UserOrders")
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([isVerified])
+}
+
+model Sessions {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+
+  token     String  @unique @map("token")
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation("UserSessions", fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model ProductCategory {
+  id       String  @id @default(uuid())
+  parentId String? @map("parent_id")
+
+  name        String
+  description String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  parent   ProductCategory?  @relation("ProductCategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children ProductCategory[] @relation("ProductCategoryHierarchy")
+
+  products Product[] @relation("ProductCategory")
+
+  @@index([parentId])
+  @@index([name])
+}
+
+model Product {
+  id         String @id @default(uuid())
+  categoryId String @map("category_id")
+
+  name        String
+  description String
+  image       String? @map("image_url")
+  price       Float
+
+  isAvailable Boolean @default(true) @map("is_available")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  category   ProductCategory? @relation("ProductCategory", fields: [categoryId], references: [id])
+  cartItems  CartItem[]       @relation("ProductCartItems")
+  orderItems OrderItem[]      @relation("ProductOrderItems")
+
+  @@index([categoryId])
+  @@index([name])
+  @@index([isAvailable])
+}
+
+model Cart {
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User       @relation("UserCart", fields: [userId], references: [id])
+  items CartItem[] @relation("CartItems")
+
+  @@index([userId])
+}
+
+model CartItem {
+  id        String @id @default(uuid())
+  cartId    String @map("cart_id")
+  productId String @map("product_id")
+
+  quantity Int @default(1)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  cart    Cart    @relation("CartItems", fields: [cartId], references: [id])
+  product Product @relation("ProductCartItems", fields: [productId], references: [id])
+
+  @@index([cartId])
+  @@index([cartId, productId])
+}
+
+model Order {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+
+  status OrderStatus @default(PENDING) @map("status")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User        @relation("UserOrders", fields: [userId], references: [id])
+  items OrderItem[] @relation("OrderItems")
+
+  @@index([userId])
+  @@index([userId, status])
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String @map("order_id")
+  productId String @map("product_id")
+
+  quantity Int @default(1)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  order   Order   @relation("OrderItems", fields: [orderId], references: [id])
+  product Product @relation("ProductOrderItems", fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([orderId, productId])
+}
