@@ -1,6 +1,6 @@
 {
   "name": "restaurant-crm",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Restaurant CRM",
   "author": "Bohdan Tsekhmeistruk",
   "license": "MIT",
@@ -11,15 +11,19 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@auth/core": "^0.41.3",
     "@hono/node-server": "^2.0.12",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
     "hono": "^4.12.33",
-    "passport": "^0.7.0",
-    "pg": "^8.22.0"
+    "hono-rate-limiter": "^0.5.3",
+    "pg": "^8.22.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^26.1.2",
     "@types/pg": "^8.20.3",
     "prisma": "^7.9.1",
@@ -29,6 +33,7 @@
   "allowScripts": {
     "@prisma/engines@7.9.1": true,
     "prisma@7.9.1": true,
-    "esbuild@0.28.1": true
+    "esbuild@0.28.1": true,
+    "bcrypt@6.0.0": true
   }
 }

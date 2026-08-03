@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -66,31 +66,33 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  sessions Sessions[] @relation("UserSessions")
-  cart     Cart?      @relation("UserCart")
-  orders   Order[]    @relation("UserOrders")
+  sessions Session[] @relation("UserSessions")
+  cart     Cart?     @relation("UserCart")
+  orders   Order[]   @relation("UserOrders")
 
   @@index([email])
   @@index([role])
   @@index([status])
   @@index([isVerified])
+  @@map("users")
 }
 
-model Sessions {
+model Session {
   id     String @id @default(uuid())
-  userId String @map("user_id")
+  userId String @unique @map("user_id")
 
-  token     String  @unique @map("token")
-  ipAddress String? @map("ip_address")
-  userAgent String? @map("user_agent")
+  refreshToken String  @unique @map("refresh_token")
+  ipAddress    String? @map("ip_address")
+  userAgent    String? @map("user_agent")
 
-  expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   user User @relation("UserSessions", fields: [userId], references: [id])
 
   @@index([userId])
+  @@index([refreshToken])
+  @@map("sessions")
 }
 
 model ProductCategory {
@@ -110,6 +112,7 @@ model ProductCategory {
 
   @@index([parentId])
   @@index([name])
+  @@map("product_categories")
 }
 
 model Product {
@@ -133,6 +136,7 @@ model Product {
   @@index([categoryId])
   @@index([name])
   @@index([isAvailable])
+  @@map("products")
 }
 
 model Cart {
@@ -146,6 +150,7 @@ model Cart {
   items CartItem[] @relation("CartItems")
 
   @@index([userId])
+  @@map("carts")
 }
 
 model CartItem {
@@ -163,6 +168,7 @@ model CartItem {
 
   @@index([cartId])
   @@index([cartId, productId])
+  @@map("cart_items")
 }
 
 model Order {
@@ -179,6 +185,7 @@ model Order {
 
   @@index([userId])
   @@index([userId, status])
+  @@map("orders")
 }
 
 model OrderItem {
@@ -196,4 +203,5 @@ model OrderItem {
 
   @@index([orderId])
   @@index([orderId, productId])
+  @@map("order_items")
 }
