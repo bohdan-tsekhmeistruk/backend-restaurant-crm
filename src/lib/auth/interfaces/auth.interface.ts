@@ -9,9 +9,7 @@ export const UserSelect = {
 } as const satisfies Prisma.UserSelect;
 
 export const SessionSelect = {
-  accessToken: true,
   refreshToken: true,
-  expiresAt: true,
   user: {
     select: UserSelect,
   },
@@ -19,4 +17,10 @@ export const SessionSelect = {
 
 export type TValidatedSessionResponse = Prisma.SessionGetPayload<{
   select: typeof SessionSelect;
+}>;
+
+export type TValidatedUserResponse = Prisma.UserGetPayload<{
+  omit: {
+    password: true;
+  }
 }>;

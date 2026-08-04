@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { validator } from "hono/validator";
 import authController from "./auth.controller.js";
 import { z } from "zod";
-import AuthMiddleware from "src/lib/auth/auth.middleware.js";
+import { AuthMiddleware } from "src/lib/auth/auth.middleware.js";
 
 const authRouter = new Hono();
 
