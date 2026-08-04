@@ -1,11 +1,12 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
-import withPrisma, { type ContextWithPrisma } from "src/lib/prisma.js";
+import withPrisma from "src/lib/prisma.js";
 import "dotenv/config";
 import v1Router from "src/v1/v1.router.js";
+import type { TServerContext } from "src/lib/dto/context.dto.js";
 
-const app = new Hono<ContextWithPrisma>();
+const app = new Hono<TServerContext>();
 
 app.use(logger());
 

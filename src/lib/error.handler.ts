@@ -1,11 +1,18 @@
 import type { Context } from "hono";
-import type { ContextWithPrisma } from "./prisma.js";
+import type { TServerContext } from "src/lib/dto/context.dto.js";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import "dotenv/config";
 
 class ErrorHandler {
+  /**
+   * Creates an HTTP error
+   * @param {ContentfulStatusCode} status - The status code
+   * @param {string} message - The error message
+   * @param {Record<string, any>} meta - The error metadata
+   * @returns {HTTPException} The HTTP exception
+   */
   httpError(
     status: ContentfulStatusCode,
     message: string,
@@ -21,7 +28,13 @@ class ErrorHandler {
     });
   }
 
-  handle(c: Context<ContextWithPrisma, any, {}>, error: any): Response {
+  /**
+   * Handles an error
+   * @param {Context<TServerContext, any, {}>} c - The context
+   * @param {any} error - The error
+   * @returns {Response} The response or the HTTP exception response
+   */
+  handle(c: Context<TServerContext, any, {}>, error: any): Response {
     // Handle HTTP exceptions
     if (error instanceof HTTPException) {
       return error.getResponse();

@@ -1,29 +1,17 @@
 import type { PrismaClient } from "src/generated/prisma/client.js";
 import jwtService from "src/v1/modules/auth/jwt.service.js";
 import type { TEnv } from "src/lib/dto/env.dto.js";
-
-type TSessionResponse = {
-  refreshToken: string;
-};
-
-type TCreateSession = {
-  userId: string;
-  ipAddress: string | undefined;
-  userAgent: string | undefined;
-};
-
-type TGetSession = {
-  userId: string;
-  refreshToken?: string;
-  ipAddress: string | undefined;
-  userAgent: string | undefined;
-};
+import type {
+  TCreateSessionParams,
+  TGetSessionParams,
+  TSessionResponse,
+} from "./dto/sessions.dto.js";
 
 class SessionsService {
   /**
    * Gets a session by user ID, IP address, and user agent
    * @param {PrismaClient} prisma - PrismaClient instance
-   * @param {TGetSession} params - Session parameters
+   * @param {TGetSessionParams} params - Session parameters
    * @param {string} params.userId - User ID
    * @param {string} params.refreshToken - Refresh token
    * @param {string | undefined} params.ipAddress - User IP address
@@ -32,7 +20,7 @@ class SessionsService {
    */
   async getSession(
     prisma: PrismaClient,
-    { userId, refreshToken, ipAddress, userAgent }: TGetSession,
+    { userId, refreshToken, ipAddress, userAgent }: TGetSessionParams,
   ): Promise<TSessionResponse | null> {
     const session = await prisma.session.findFirst({
       where: {
@@ -51,7 +39,7 @@ class SessionsService {
   /**
    * Creates a new session and returns a session response
    * @param {PrismaClient} prisma - PrismaClient instance
-   * @param {TCreateSession} params - Session parameters
+   * @param {TCreateSessionParams} params - Session parameters
    * @param {string} params.userId - User ID
    * @param {number} params.expiresInDays - Number of days to expire the session
    * @param {string | undefined} params.ipAddress - User IP address
@@ -61,7 +49,7 @@ class SessionsService {
   async createSession(
     prisma: PrismaClient,
     envVars: TEnv,
-    { userId, ipAddress, userAgent }: TCreateSession,
+    { userId, ipAddress, userAgent }: TCreateSessionParams,
   ): Promise<TSessionResponse> {
     const refreshToken = jwtService.issueRefreshToken(
       userId,

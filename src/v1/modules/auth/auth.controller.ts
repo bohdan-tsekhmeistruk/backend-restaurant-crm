@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import type { BlankInput } from "hono/types";
-import type { ContextWithPrisma } from "src/lib/prisma.js";
+import type { TServerContext } from "src/lib/dto/context.dto.js";
 import authService from "./auth.service.js";
 import { getConnInfo } from "@hono/node-server/conninfo";
 import { getSignedCookie, setSignedCookie } from "hono/cookie";
@@ -11,12 +11,12 @@ import errorHandler from "src/lib/error.handler.js";
 class AuthController {
   /**
    * Logs in a user and returns a JSON response with auth response object
-   * @param {Context<ContextWithPrisma, "/login", BlankInput>} c - Context object
+   * @param {Context<TServerContext, "/login", BlankInput>} c - Context object
    * @returns {Promise<Response>} JSON response with auth response object
    * @throws {HTTPException} 401 - Invalid credentials
    * @throws {HTTPException} 500 - Internal server error
    */
-  async login(c: Context<ContextWithPrisma, "/login", BlankInput>) {
+  async login(c: Context<TServerContext, "/login", BlankInput>) {
     try {
       const prisma = c.get("prisma");
       const connInfo = getConnInfo(c);
@@ -69,12 +69,12 @@ class AuthController {
 
   /**
    * Registers a new user and returns a JSON response with auth response object
-   * @param {Context<ContextWithPrisma, "/register", BlankInput>} c - Context object
+   * @param {Context<TServerContext, "/register", BlankInput>} c - Context object
    * @returns {Promise<Response>} JSON response with auth response object
    * @throws {HTTPException} 400 - User already exists with this email
    * @throws {HTTPException} 500 - Internal server error
    */
-  async register(c: Context<ContextWithPrisma, "/register", BlankInput>) {
+  async register(c: Context<TServerContext, "/register", BlankInput>) {
     try {
       const prisma = c.get("prisma");
       const connInfo = getConnInfo(c);
@@ -131,13 +131,13 @@ class AuthController {
 
   /**
    * Refreshes a token and returns a JSON response with auth response object
-   * @param {Context<ContextWithPrisma, "/refresh-token", BlankInput>} c - Context object
+   * @param {Context<TServerContext, "/refresh-token", BlankInput>} c - Context object
    * @returns {Promise<Response>} JSON response with auth response object
    * @throws {HTTPException} 401 - Unauthorized
    * @throws {HTTPException} 500 - Internal server error
    */
   async refreshToken(
-    c: Context<ContextWithPrisma, "/refresh-token", BlankInput>,
+    c: Context<TServerContext, "/refresh-token", BlankInput>,
   ) {
     try {
       const prisma = c.get("prisma");

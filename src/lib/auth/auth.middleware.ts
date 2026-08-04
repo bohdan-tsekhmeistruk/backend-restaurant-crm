@@ -1,20 +1,20 @@
 import type { Context, Next } from "hono";
-import type { ContextWithPrisma } from "src/lib/prisma.js";
+import type { TServerContext } from "src/lib/dto/context.dto.js";
 import { getSignedCookie } from "hono/cookie";
 import type { TEnv } from "src/lib/dto/env.dto.js";
 import { env } from "hono/adapter";
 import jwtService from "src/v1/modules/auth/jwt.service.js";
-import errorHandler from "../error.handler.js";
+import errorHandler from "src/lib/error.handler.js";
 
 /**
  * Middleware to authenticate the user
- * @param {Context<ContextWithPrisma, any, { user: User }>} c - The context
+ * @param {Context<TServerContext, any, {}>} c - The context
  * @param {Next} next - The next middleware/handler
  * @returns {Promise<void | Response>} The next middleware/handler
  * @throws {HTTPException} If the user is not authenticated
  */
 export default async function AuthMiddleware(
-  c: Context<ContextWithPrisma, any, {}>,
+  c: Context<TServerContext, any, {}>,
   next: Next,
 ): Promise<void | Response> {
   // Get the Prisma client

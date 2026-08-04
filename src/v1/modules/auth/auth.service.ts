@@ -9,29 +9,11 @@ import bcrypt from "bcrypt";
 import sessionsService from "src/v1/modules/sessions/sessions.service.js";
 import type { TEnv } from "src/lib/dto/env.dto.js";
 import jwtService from "./jwt.service.js";
-
-type TLogin = {
-  email: string;
-  password: string;
-  ipAddress: string | undefined;
-  userAgent: string | undefined;
-};
-
-type TRegister = {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  ipAddress: string | undefined;
-  userAgent: string | undefined;
-};
-
-type TRefreshToken = {
-  refreshToken: string;
-  ipAddress: string | undefined;
-  userAgent: string | undefined;
-};
+import type {
+  TLoginParams,
+  TRefreshTokenParams,
+  TRegisterParams,
+} from "./dto/auth.dto.js";
 
 const passwordSaltRounds = 12;
 
@@ -39,7 +21,7 @@ class AuthService {
   /**
    * Authenticates a user and returns a login response
    * @param {PrismaClient} prisma - PrismaClient instance
-   * @param {TLogin} params - Login parameters
+   * @param {TLoginParams} params - Login parameters
    * @param {string} params.email - User email
    * @param {string} params.password - User password
    * @param {string | undefined} params.ipAddress - User IP address
@@ -49,7 +31,7 @@ class AuthService {
   async login(
     prisma: PrismaClient,
     envVars: TEnv,
-    { email, password, ipAddress, userAgent }: TLogin,
+    { email, password, ipAddress, userAgent }: TLoginParams,
   ): Promise<TAuthResponse> {
     // Find the user by email
     const user = await prisma.user.findUnique({
@@ -101,7 +83,7 @@ class AuthService {
   /**
    * Registers a new user and returns a login response
    * @param {PrismaClient} prisma - PrismaClient instance
-   * @param {TRegister} params - Register parameters
+   * @param {TRegisterParams} params - Register parameters
    * @param {string} params.email - User email
    * @param {string} params.password - User password
    * @param {string} params.firstName - User first name
@@ -122,7 +104,7 @@ class AuthService {
       phone,
       ipAddress,
       userAgent,
-    }: TRegister,
+    }: TRegisterParams,
   ): Promise<TAuthResponse> {
     // Check if the user already exists
     const user = await prisma.user.findUnique({
@@ -178,7 +160,7 @@ class AuthService {
    * Refreshes a token and returns a login response
    * @param {PrismaClient} prisma - PrismaClient instance
    * @param {TEnv} envVars - Environment variables
-   * @param {TRefreshToken} params - Refresh token parameters
+   * @param {TRefreshTokenParams} params - Refresh token parameters
    * @param {string} params.refreshToken - Refresh token
    * @param {string | undefined} params.ipAddress - User IP address
    * @param {string | undefined} params.userAgent - User agent
@@ -188,7 +170,7 @@ class AuthService {
     prisma: PrismaClient,
     envVars: TEnv,
     user: User,
-    { refreshToken, ipAddress, userAgent }: TRefreshToken,
+    { refreshToken, ipAddress, userAgent }: TRefreshTokenParams,
   ): Promise<TRefreshTokenResponse> {
     // Get the session by refresh token
     const session = await sessionsService.getSession(prisma, {
