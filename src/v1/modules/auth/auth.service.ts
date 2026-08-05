@@ -1,10 +1,9 @@
-import type { PrismaClient, User } from "src/generated/prisma/client.js";
+import type { PrismaClient } from "src/generated/prisma/client.js";
 import {
   UserAuthSelect,
   type TAuthResponse,
   type TRefreshTokenResponse,
 } from "./interfaces/auth.interface.js";
-import { HTTPException } from "hono/http-exception";
 import bcrypt from "bcrypt";
 import sessionsService from "src/v1/modules/sessions/sessions.service.js";
 import type { TEnv } from "src/lib/dto/env.dto.js";
@@ -14,8 +13,8 @@ import type {
   TRefreshTokenParams,
   TRegisterParams,
 } from "./dto/auth.dto.js";
-
-const passwordSaltRounds = 12;
+import errorHandler from "src/lib/error.handler.js";
+import type { TValidatedUserResponse } from "src/lib/auth/interfaces/auth.interface.js";
 
 class AuthService {
   /**
@@ -41,13 +40,13 @@ class AuthService {
       select: UserAuthSelect,
     });
     if (!user) {
-      throw new HTTPException(401, { message: "Invalid credentials" });
+      throw errorHandler.httpError(401, "Invalid credentials");
     }
 
     // Check if the password is valid
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new HTTPException(401, { message: "Invalid credentials" });
+      throw errorHandler.httpError(401, "Invalid credentials");
     }
 
     // Delete the password from the user object to avoid sending it to the client
@@ -114,11 +113,14 @@ class AuthService {
       select: { id: true },
     });
     if (user) {
-      throw new HTTPException(400, { message: "User already exists" });
+      throw errorHandler.httpError(400, "User already exists");
     }
 
     // Hash the password
-    const hashedPassword = await bcrypt.hash(password, passwordSaltRounds);
+    const hashedPassword = await bcrypt.hash(
+      password,
+      parseInt(process.env.PASSWORD_SALT_ROUNDS ?? "12", 10),
+    );
 
     // Create a new user
     const newUser = await prisma.user.create({
@@ -169,7 +171,7 @@ class AuthService {
   async refreshToken(
     prisma: PrismaClient,
     envVars: TEnv,
-    user: User,
+    user: TValidatedUserResponse,
     { refreshToken, ipAddress, userAgent }: TRefreshTokenParams,
   ): Promise<TRefreshTokenResponse> {
     // Get the session by refresh token
@@ -180,7 +182,7 @@ class AuthService {
       userAgent,
     });
     if (!session) {
-      throw new HTTPException(401, { message: "Unauthorized" });
+      throw errorHandler.httpError(401, "Unauthorized");
     }
 
     // Generate the access token

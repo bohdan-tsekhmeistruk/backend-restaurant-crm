@@ -1,0 +1,4 @@
+{
+  "subject": "Password Reset",
+  "html": "Token for password reset: <b>{{token}}</b>"
+}

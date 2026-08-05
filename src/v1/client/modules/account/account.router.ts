@@ -4,10 +4,36 @@ import accountController from "./account.controller.js";
 import { validator } from "hono/validator";
 import {
   TCheckEmailVerificationBody,
+  TCheckPasswordResetBody,
+  TSendPasswordResetBody,
   TUpdateAccountBody,
 } from "./dto/account.dto.js";
 
 const accountRouter = new Hono();
+
+accountRouter.post(
+  "/send-password-reset",
+  validator("json", (value, c) => {
+    const result = TSendPasswordResetBody.safeParse(value);
+    if (!result.success) {
+      return c.json({ message: JSON.parse(result.error.message) }, 400);
+    }
+    return result.data;
+  }),
+  accountController.sendPasswordResetEmail,
+);
+
+accountRouter.post(
+  "/check-password-reset",
+  validator("json", (value, c) => {
+    const result = TCheckPasswordResetBody.safeParse(value);
+    if (!result.success) {
+      return c.json({ message: JSON.parse(result.error.message) }, 400);
+    }
+    return result.data;
+  }),
+  accountController.checkPasswordReset,
+);
 
 // Middleware to authenticate the user
 accountRouter.use(AuthMiddleware);

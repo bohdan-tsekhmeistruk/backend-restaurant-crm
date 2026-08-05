@@ -63,7 +63,7 @@ class AuthController {
 
       return c.json(response, 200);
     } catch (error) {
-      errorHandler.handle(c, error);
+      return errorHandler.handle(c, error);
     }
   }
 
@@ -125,7 +125,7 @@ class AuthController {
 
       return c.json(response, 201);
     } catch (error) {
-      errorHandler.handle(c, error);
+      return errorHandler.handle(c, error);
     }
   }
 

@@ -7,6 +7,8 @@ import type {
   TUpdateAccountInput,
   TCheckEmailVerificationBody,
   TCheckEmailVerificationInput,
+  TCheckPasswordResetInput,
+  TSendPasswordResetInput,
 } from "./dto/account.dto.js";
 import accountService from "./account.service.js";
 import type { TValidatedUserResponse } from "src/lib/auth/interfaces/auth.interface.js";
@@ -45,6 +47,7 @@ class AccountController {
       const user = c.get("user") as TValidatedUserResponse;
 
       await accountService.updateAccount(prisma, user.id, body);
+
       return c.body(null, 204);
     } catch (error) {
       return errorHandler.handle(c, error);
@@ -85,6 +88,47 @@ class AccountController {
       const user = c.get("user") as TValidatedUserResponse;
 
       await accountService.checkEmailVerification(prisma, user, token);
+
+      return c.body(null, 204);
+    } catch (error) {
+      return errorHandler.handle(c, error);
+    }
+  }
+
+  async sendPasswordResetEmail(
+    c: Context<TServerContext, "/send-password-reset", TSendPasswordResetInput>,
+  ) {
+    try {
+      const prisma = c.get("prisma");
+      const connInfo = getConnInfo(c);
+      const { email } = c.req.valid("json");
+
+      await accountService.sendPasswordResetEmail(
+        prisma,
+        email,
+        connInfo.remote.address,
+        c.req.header("user-agent"),
+      );
+
+      return c.body(null, 204);
+    } catch (error) {
+      console.error("Error sending password reset email: ", error);
+      return errorHandler.handle(c, error);
+    }
+  }
+
+  async checkPasswordReset(
+    c: Context<
+      TServerContext,
+      "/check-password-reset",
+      TCheckPasswordResetInput
+    >,
+  ) {
+    try {
+      const prisma = c.get("prisma");
+      const { token, newPassword } = c.req.valid("json");
+
+      await accountService.checkPasswordReset(prisma, token, newPassword);
 
       return c.body(null, 204);
     } catch (error) {
