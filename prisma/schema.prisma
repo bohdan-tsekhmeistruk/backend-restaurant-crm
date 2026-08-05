@@ -66,9 +66,11 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  sessions Session[] @relation("UserSessions")
-  cart     Cart?     @relation("UserCart")
-  orders   Order[]   @relation("UserOrders")
+  sessions          Session[]          @relation("UserSessions")
+  cart              Cart?              @relation("UserCart")
+  orders            Order[]            @relation("UserOrders")
+  emailVerification EmailVerification? @relation("UserEmailVerification")
+  passwordReset     PasswordReset?     @relation("UserPasswordReset")
 
   @@index([email])
   @@index([role])
@@ -204,4 +206,44 @@ model OrderItem {
   @@index([orderId])
   @@index([orderId, productId])
   @@map("order_items")
+}
+
+model EmailVerification {
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+
+  token     String  @unique @map("token")
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+
+  expiresAt  DateTime  @map("expires_at")
+  verifiedAt DateTime? @map("verified_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation("UserEmailVerification", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([token])
+  @@map("email_verifications")
+}
+
+model PasswordReset {
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+
+  token     String   @unique @map("token")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  expiresAt DateTime @map("expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation("UserPasswordReset", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([token])
+  @@map("password_resets")
 }

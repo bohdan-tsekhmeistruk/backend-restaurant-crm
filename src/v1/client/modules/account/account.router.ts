@@ -2,15 +2,20 @@ import { Hono } from "hono";
 import { AuthMiddleware } from "src/lib/auth/auth.middleware.js";
 import accountController from "./account.controller.js";
 import { validator } from "hono/validator";
-import { TUpdateAccountBody } from "./dto/account.dto.js";
+import {
+  TCheckEmailVerificationBody,
+  TUpdateAccountBody,
+} from "./dto/account.dto.js";
 
 const accountRouter = new Hono();
 
-accountRouter.get("/me", AuthMiddleware, accountController.getMyAccount);
+// Middleware to authenticate the user
+accountRouter.use(AuthMiddleware);
+
+accountRouter.get("/me", accountController.getMyAccount);
 
 accountRouter.patch(
   "/update",
-  AuthMiddleware,
   validator("json", (value, c) => {
     const result = TUpdateAccountBody.safeParse(value);
     if (!result.success) {
@@ -19,6 +24,23 @@ accountRouter.patch(
     return result.data;
   }),
   accountController.updateMyAccount,
+);
+
+accountRouter.post(
+  "/send-email-verification",
+  accountController.sendEmailVerification,
+);
+
+accountRouter.post(
+  "/check-email-verification",
+  validator("json", (value, c) => {
+    const result = TCheckEmailVerificationBody.safeParse(value);
+    if (!result.success) {
+      return c.json({ message: JSON.parse(result.error.message) }, 400);
+    }
+    return result.data;
+  }),
+  accountController.checkEmailVerification,
 );
 
 export default accountRouter;

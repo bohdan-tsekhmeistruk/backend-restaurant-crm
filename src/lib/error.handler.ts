@@ -55,6 +55,9 @@ class ErrorHandler {
           throw this.httpError(500, "Internal server error");
       }
     }
+
+    // Handle other errors
+    console.error("Error:", error);
     throw this.httpError(500, "Internal server error");
   }
 }

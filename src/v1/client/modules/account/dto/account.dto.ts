@@ -12,3 +12,16 @@ export type TUpdateAccountInput = {
   in: { json: TUpdateAccountBody };
   out: { json: TUpdateAccountBody };
 };
+
+export const TCheckEmailVerificationBody = z.object({
+  token: z.string().min(1).max(255),
+});
+
+export type TCheckEmailVerificationBody = z.infer<
+  typeof TCheckEmailVerificationBody
+>;
+
+export type TCheckEmailVerificationInput = {
+  in: { json: TCheckEmailVerificationBody };
+  out: { json: TCheckEmailVerificationBody };
+};
