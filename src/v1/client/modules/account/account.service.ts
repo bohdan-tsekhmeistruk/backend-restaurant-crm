@@ -4,7 +4,6 @@ import emailService from "src/v1/modules/email/email.servie.js";
 import type { TValidatedUserResponse } from "src/lib/auth/interfaces/auth.interface.js";
 import crypto from "crypto";
 import errorHandler from "src/lib/error.handler.js";
-import templatesService from "src/lib/templates.service.js";
 import { EAvailableTemplates } from "src/lib/dto/templates.dto.js";
 import bcrypt from "bcrypt";
 
@@ -173,10 +172,6 @@ class AccountService {
     // generate token
     const token = crypto.randomBytes(128).toString("hex");
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
-
-    const template = await templatesService.getTemplate(
-      EAvailableTemplates.EMAIL_PASSWORD_RESET,
-    );
 
     // send email with token to user
     const info = await emailService.sendEmailWithTemplate(
