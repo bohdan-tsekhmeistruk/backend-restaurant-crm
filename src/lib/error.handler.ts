@@ -35,6 +35,7 @@ class ErrorHandler {
    * @returns {Response} The response or the HTTP exception response
    */
   handle(c: Context<TServerContext, any, {}>, error: any): Response {
+    console.error("Error:", error);
     // Handle HTTP exceptions
     if (error instanceof HTTPException) {
       return error.getResponse();
@@ -57,7 +58,6 @@ class ErrorHandler {
     }
 
     // Handle other errors
-    console.error("Error:", error);
     throw this.httpError(500, "Internal server error");
   }
 }
