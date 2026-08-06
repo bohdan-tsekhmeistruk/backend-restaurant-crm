@@ -122,7 +122,7 @@ class AuthService {
       parseInt(process.env.PASSWORD_SALT_ROUNDS ?? "12", 10),
     );
 
-    // Create a new user
+    // Create a new user with an empty cart
     const newUser = await prisma.user.create({
       data: {
         email,
@@ -131,6 +131,10 @@ class AuthService {
         firstName,
         lastName,
         phone,
+
+        cart: {
+          create: {},
+        },
       },
       select: UserAuthSelect,
     });
