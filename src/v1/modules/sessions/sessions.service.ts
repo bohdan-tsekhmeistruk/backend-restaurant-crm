@@ -93,6 +93,23 @@ class SessionsService {
   }
 
   /**
+   * Deletes a session by its refresh token
+   * @param {PrismaClient} prisma - PrismaClient instance
+   * @param {string} refreshToken - Refresh token
+   * @returns {Promise<void>}
+   */
+  async deleteSession(
+    prisma: PrismaClient,
+    refreshToken: string,
+  ): Promise<void> {
+    await prisma.session.deleteMany({
+      where: {
+        refreshToken,
+      },
+    });
+  }
+
+  /**
    * Rotates the refresh token of a session and updates its IP address
    * @param {PrismaClient} prisma - PrismaClient instance
    * @param {TRotateSessionParams} params - Rotation parameters

@@ -1,20 +1,21 @@
 # Backend Restaurant CRM
 
-![Version](https://img.shields.io/badge/version-0.5.0-blue)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Node.js](https://img.shields.io/badge/Node.js-ESM-339933?logo=node.js&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
-![Hono](https://img.shields.io/badge/Hono-4-E36002?logo=hono&logoColor=white)
-![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql&logoColor=white)
+Version
+License: MIT
+Node.js
+TypeScript
+Hono
+Prisma
+PostgreSQL
 
 REST API backend for a restaurant CRM system, built with **Hono**, **Prisma 7** and **PostgreSQL**.
 It provides JWT-based authentication with refresh-token sessions, email verification and password
-reset flows, role-based access control (client / admin), and a full product catalog with nested
-categories. The database schema is already prepared for the shopping cart and order lifecycle —
-these APIs are the next milestones on the [roadmap](#roadmap).
+reset flows, role-based access control (client / admin), a full product catalog with nested
+categories, a shopping cart, and a complete order lifecycle from checkout to delivery.
 
 ---
+
+
 
 ## Table of Contents
 
@@ -30,7 +31,12 @@ these APIs are the next milestones on the [roadmap](#roadmap).
   - [Auth](#auth)
   - [Account (client)](#account-client)
   - [Catalog (client)](#catalog-client)
+  - [Cart (client)](#cart-client)
+  - [Orders (client)](#orders-client)
   - [Catalog (admin)](#catalog-admin)
+  - [Cart (admin)](#cart-admin)
+  - [Orders (admin)](#orders-admin)
+- [Order Lifecycle](#order-lifecycle)
 - [Project Structure](#project-structure)
 - [Database Schema](#database-schema)
 - [Environment Variables](#environment-variables)
@@ -40,60 +46,81 @@ these APIs are the next milestones on the [roadmap](#roadmap).
 
 ---
 
+
+
 ## Features
+
+
 
 ### Implemented
 
 - **Authentication** — register / login with JWT access tokens (~15 min) and rotating refresh
-  tokens, delivered via signed `httpOnly` cookies. One active session per user, bound to IP and
-  User-Agent.
+tokens, delivered via signed `httpOnly` cookies. Multiple sessions per user (one per
+User-Agent), bound to IP and User-Agent. An empty cart is created automatically on
+registration.
 - **Email verification** — time-limited verification tokens sent by email (Nodemailer + JSON
-  templates with `{{placeholder}}` substitution).
+templates with `{{placeholder}}` substitution).
 - **Password reset** — secure two-step flow: request a code by email, then set a new password
-  (strong password policy enforced by Zod).
+(strong password policy enforced by Zod).
 - **Role-based access control** — `USER` and `ADMIN` roles with dedicated middleware
-  (`AuthMiddleware`, `AdminAuthMiddleware`).
+(`AuthMiddleware`, `AdminAuthMiddleware`).
 - **Product catalog (client)** — paginated search and get-by-id for products and categories.
 - **Product catalog (admin)** — full CRUD for products and categories, including nested
-  (parent/child) categories. Products referenced by cart or order items are protected from
-  deletion.
-- **Rate limiting** — 30 requests per 10 minutes on all `/auth/*` routes (`hono-rate-limiter`).
+(parent/child) categories. Products referenced by cart or order items are protected from
+deletion.
+- **Shopping cart (client)** — get or auto-create a cart, add / update / remove items
+(quantity 1–99). Adding an existing product increments its quantity.
+- **Shopping cart (admin)** — manage any user's cart by `userId`, including changing the
+product on an existing cart item.
+- **Orders (client)** — checkout from the cart (creates a `PENDING` order and clears the cart),
+view order history, cancel a `PENDING` order.
+- **Orders (admin)** — search orders, create orders for any user, update status to any
+`OrderStatus`, hard-delete orders.
+- **Rate limiting** — 30 requests per 10 minutes on all `/auth/`* routes (`hono-rate-limiter`).
 - **Security** — bcrypt password hashing, Zod validation on every input, centralized error
-  handling, typed environment config.
+handling, typed environment config.
 
-### Coming soon (database schema is ready)
 
-- **Shopping cart** — one cart per user, add / update / remove items (`Cart`, `CartItem` models).
-- **Orders** — checkout from the cart and a full order lifecycle:
-  `PENDING → COOKING → READY_FOR_PICKUP → DELIVERING → DELIVERED → COMPLETED`
-  (plus `CANCELLED` / `REFUNDED`).
-- **Admin user management** — block / delete users (`UserStatus` enum is already in the schema).
+
+### Coming soon
+
+- **Logout / session revocation** — invalidate the refresh token and clear cookies.
+- **Admin user management** — list, block and delete users (`UserStatus` enum is already in
+the schema but not enforced in the application layer).
 
 See the full [Roadmap](#roadmap) below.
 
 ## Tech Stack
 
-| Layer        | Technology                                            |
-| ------------ | ----------------------------------------------------- |
-| Runtime      | Node.js (ESM)                                         |
-| Language     | TypeScript (strict mode, NodeNext modules)            |
-| Framework    | [Hono](https://hono.dev) + `@hono/node-server`        |
-| Validation   | [Zod](https://zod.dev) + `@hono/standard-validator`   |
-| ORM          | [Prisma 7](https://www.prisma.io) (`@prisma/adapter-pg`) |
-| Database     | PostgreSQL                                            |
-| Auth         | JWT (`hono/jwt`), signed cookies, bcrypt              |
-| Email        | Nodemailer (Gmail SMTP)                               |
-| Rate limiting| `hono-rate-limiter`                                   |
-| Dev tooling  | `tsx watch`, `tsc`                                    |
+
+| Layer         | Technology                                               |
+| ------------- | -------------------------------------------------------- |
+| Runtime       | Node.js (ESM)                                            |
+| Language      | TypeScript (strict mode, NodeNext modules)               |
+| Framework     | [Hono](https://hono.dev) + `@hono/node-server`           |
+| Validation    | [Zod](https://zod.dev) + `@hono/standard-validator`      |
+| ORM           | [Prisma 7](https://www.prisma.io) (`@prisma/adapter-pg`) |
+| Database      | PostgreSQL                                               |
+| Auth          | JWT (`hono/jwt`), signed cookies, bcrypt                 |
+| Email         | Nodemailer (Gmail SMTP)                                  |
+| Rate limiting | `hono-rate-limiter`                                      |
+| Dev tooling   | `tsx watch`, `tsc`                                       |
+
+
+
 
 ## Getting Started
+
+
 
 ### Prerequisites
 
 - Node.js 20+
 - A running PostgreSQL instance
 - A Gmail account with an [app password](https://support.google.com/accounts/answer/185833)
-  (for sending verification / reset emails)
+(for sending verification / reset emails)
+
+
 
 ### Installation
 
@@ -104,13 +131,13 @@ git clone https://github.com/<your-username>/backend-restaurant-crm.git
 cd backend-restaurant-crm
 ```
 
-2. Install dependencies:
+1. Install dependencies:
 
 ```bash
 npm install
 ```
 
-3. Create the environment file and fill in all parameters:
+1. Create the environment file and fill in all parameters:
 
 ```bash
 cp .env.example .env
@@ -132,6 +159,8 @@ Optional — inspect the data in Prisma Studio:
 npx prisma studio
 ```
 
+
+
 ### Running the Server
 
 Development mode (hot reload):
@@ -152,11 +181,13 @@ it should respond with `{ "message": "Api is ready!" }`.
 
 ## Usage
 
-| Command         | Description                              |
-| --------------- | ---------------------------------------- |
-| `npm run dev`   | Start the dev server with hot reload     |
-| `npm run build` | Compile TypeScript into `dist/`          |
-| `npm start`     | Run the compiled server from `dist/`     |
+
+| Command         | Description                          |
+| --------------- | ------------------------------------ |
+| `npm run dev`   | Start the dev server with hot reload |
+| `npm run build` | Compile TypeScript into `dist/`      |
+| `npm start`     | Run the compiled server from `dist/` |
+
 
 Prisma CLI (not wrapped in npm scripts):
 
@@ -166,11 +197,13 @@ npx prisma migrate deploy                        # apply migrations in productio
 npx prisma generate                              # regenerate the client
 ```
 
-Quick smoke test — register a user (tokens are returned as signed cookies):
+Quick smoke test — register a user (tokens are returned as signed cookies, cart is created
+automatically):
 
 ```bash
 curl -X POST http://localhost:3000/api/v1/auth/register \
   -H "Content-Type: application/json" \
+  -c cookies.txt \
   -d '{
     "email": "user@example.com",
     "password": "Str0ng!Password",
@@ -180,20 +213,26 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
   }'
 ```
 
-Log in and keep the session cookies:
+Add a product to the cart and checkout:
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/auth/login \
+curl -X POST http://localhost:3000/api/v1/cart/items \
   -H "Content-Type: application/json" \
-  -c cookies.txt \
-  -d '{ "email": "user@example.com", "password": "Str0ng!Password" }'
+  -b cookies.txt \
+  -d '{ "productId": "<product-uuid>", "quantity": 2 }'
+
+curl -X POST http://localhost:3000/api/v1/orders \
+  -b cookies.txt
 ```
 
-Call a protected endpoint with the saved cookies:
+View order history:
 
 ```bash
-curl http://localhost:3000/api/v1/account/me -b cookies.txt
+curl "http://localhost:3000/api/v1/orders?status=PENDING&page=1&limit=20" \
+  -b cookies.txt
 ```
+
+
 
 ## API Reference
 
@@ -201,52 +240,156 @@ Base URL: `/api/v1`. Authentication is cookie-based (`accessToken` + `refreshTok
 signed `httpOnly` cookies) — no `Authorization` header is required.
 
 - **Public** — no authentication needed
-- **User** — requires a valid access token (`USER` or `ADMIN` role)
-- **Admin** — requires a valid access token with the `ADMIN` role
+- **Refresh** — valid `refreshToken` cookie only (no access token required)
+- **User** — valid access token (`USER` or `ADMIN` role)
+- **Admin** — valid access token with the `ADMIN` role
+
+
 
 ### Auth
 
 `/api/v1/auth` — rate-limited to 30 requests per 10 minutes.
 
-| Method | Endpoint         | Access | Description                                    |
-| ------ | ---------------- | ------ | ---------------------------------------------- |
-| POST   | `/register`      | Public | Create a `USER` account, starts a session      |
-| POST   | `/login`         | Public | Log in, sets `accessToken` / `refreshToken` cookies |
-| POST   | `/refresh-token` | User   | Rotate the access token using the refresh token |
+
+| Method | Endpoint         | Access  | Description                                                   |
+| ------ | ---------------- | ------- | ------------------------------------------------------------- |
+| POST   | `/register`      | Public  | Create a `USER` account, start a session, create a cart       |
+| POST   | `/login`         | Public  | Log in, set `accessToken` / `refreshToken` cookies            |
+| POST   | `/refresh-token` | Refresh | Rotate the access and refresh tokens via refresh cookie (204) |
+| POST   | `/logout`        | Refresh | Delete the session and clear auth cookies (204)               |
+
+
+
 
 ### Account (client)
 
 `/api/v1/account`
 
-| Method | Endpoint                    | Access | Description                                |
-| ------ | --------------------------- | ------ | ------------------------------------------ |
-| GET    | `/me`                       | User   | Get the current user's profile             |
+
+| Method | Endpoint                    | Access | Description                                   |
+| ------ | --------------------------- | ------ | --------------------------------------------- |
+| GET    | `/me`                       | User   | Get the current user's profile                |
 | PATCH  | `/update`                   | User   | Update `firstName`, `lastName` and/or `phone` |
-| POST   | `/send-email-verification`  | User   | Send an email verification token           |
-| POST   | `/check-email-verification` | User   | Confirm the email with the received token  |
-| POST   | `/send-password-reset`      | Public | Send a password reset code by email        |
-| POST   | `/check-password-reset`     | Public | Verify the code and set a new password     |
+| POST   | `/send-email-verification`  | User   | Send an email verification token              |
+| POST   | `/check-email-verification` | User   | Confirm the email with the received token     |
+| POST   | `/send-password-reset`      | Public | Send a password reset code by email           |
+| POST   | `/check-password-reset`     | Public | Verify the code and set a new password        |
+
+
+
 
 ### Catalog (client)
 
 `/api/v1/categories` and `/api/v1/products` — read-only.
 
-| Method | Endpoint  | Access | Description                          |
-| ------ | --------- | ------ | ------------------------------------ |
+
+| Method | Endpoint  | Access | Description                            |
+| ------ | --------- | ------ | -------------------------------------- |
 | GET    | `/search` | User   | Paginated search (categories/products) |
-| GET    | `/:id`    | User   | Get a single item by UUID            |
+| GET    | `/:id`    | User   | Get a single item by UUID              |
+
+
+
+
+### Cart (client)
+
+`/api/v1/cart`
+
+
+| Method | Endpoint     | Access | Description                                |
+| ------ | ------------ | ------ | ------------------------------------------ |
+| GET    | `/`          | User   | Get or auto-create the current user's cart |
+| POST   | `/items`     | User   | Add item (`productId`, `quantity` 1–99)    |
+| PATCH  | `/items/:id` | User   | Update item quantity                       |
+| DELETE | `/items/:id` | User   | Remove item from cart                      |
+
+
+
+
+### Orders (client)
+
+`/api/v1/orders`
+
+
+| Method | Endpoint | Access | Description                                                 |
+| ------ | -------- | ------ | ----------------------------------------------------------- |
+| GET    | `/`      | User   | List own orders (`status`, `page`, `limit` query params)    |
+| GET    | `/:id`   | User   | Get own order by UUID                                       |
+| POST   | `/`      | User   | Checkout — create order from cart, clear cart               |
+| PATCH  | `/:id`   | User   | Cancel order — `{ "status": "CANCELLED" }` (`PENDING` only) |
+
+
+
 
 ### Catalog (admin)
 
 `/api/v1/admin/categories` and `/api/v1/admin/products`.
 
-| Method | Endpoint  | Access | Description                                  |
-| ------ | --------- | ------ | -------------------------------------------- |
-| GET    | `/search` | Admin  | Paginated search                             |
-| GET    | `/:id`    | Admin  | Get a single item by UUID                    |
-| POST   | `/`       | Admin  | Create a category / product                  |
-| PATCH  | `/:id`    | Admin  | Update a category / product                  |
+
+| Method | Endpoint  | Access | Description                                     |
+| ------ | --------- | ------ | ----------------------------------------------- |
+| GET    | `/search` | Admin  | Paginated search                                |
+| GET    | `/:id`    | Admin  | Get a single item by UUID                       |
+| POST   | `/`       | Admin  | Create a category / product                     |
+| PATCH  | `/:id`    | Admin  | Update a category / product                     |
 | DELETE | `/:id`    | Admin  | Delete (products in a cart/order are protected) |
+
+
+
+
+### Cart (admin)
+
+`/api/v1/admin/cart`
+
+
+| Method | Endpoint                 | Access | Description                           |
+| ------ | ------------------------ | ------ | ------------------------------------- |
+| GET    | `/:userId`               | Admin  | Get or auto-create a user's cart      |
+| POST   | `/:userId/items`         | Admin  | Add item to user's cart               |
+| PATCH  | `/:userId/items/:itemId` | Admin  | Update item (`productId`, `quantity`) |
+| DELETE | `/:userId/items/:itemId` | Admin  | Remove item from user's cart          |
+
+
+
+
+### Orders (admin)
+
+`/api/v1/admin/orders`
+
+
+| Method | Endpoint  | Access | Description                                         |
+| ------ | --------- | ------ | --------------------------------------------------- |
+| GET    | `/search` | Admin  | Search orders (`userId`, `status`, `page`, `limit`) |
+| GET    | `/:id`    | Admin  | Get order by UUID                                   |
+| POST   | `/`       | Admin  | Create order for a user (`userId`, `items[]`)       |
+| PATCH  | `/:id`    | Admin  | Update order status (any `OrderStatus`)             |
+| DELETE | `/:id`    | Admin  | Hard-delete order and its items (204)               |
+
+
+
+
+## Order Lifecycle
+
+Orders progress through the following statuses:
+
+```
+PENDING → COOKING → READY_FOR_PICKUP → DELIVERING → DELIVERED → COMPLETED
+```
+
+Terminal / exceptional statuses: `CANCELLED`, `REFUNDED`.
+
+
+| Actor  | Action        | Rules                                                      |
+| ------ | ------------- | ---------------------------------------------------------- |
+| Client | Checkout      | Cart must not be empty; all products must be `isAvailable` |
+| Client | Cancel        | Only `PENDING` → `CANCELLED`                               |
+| Client | View          | Own orders only                                            |
+| Admin  | Update status | Any `OrderStatus` — no transition validation               |
+| Admin  | Create        | Explicit `userId` + `items[]` (bypasses cart)              |
+| Admin  | Delete        | Hard delete of order and all order items                   |
+
+
+
 
 ## Project Structure
 
@@ -268,17 +411,21 @@ backend-restaurant-crm/
 │   └── v1/                      # API version 1
 │       ├── v1.router.ts         # Version router + auth rate limiting
 │       ├── modules/
-│       │   ├── auth/            # login / register / refresh-token
+│       │   ├── auth/            # login / register / refresh-token / logout
 │       │   ├── email/           # Nodemailer wrapper (service)
 │       │   └── sessions/        # Session persistence (service)
 │       ├── client/              # Authenticated client area
 │       │   └── modules/
 │       │       ├── account/     # Profile, verification, password reset
+│       │       ├── cart/        # Shopping cart
 │       │       ├── categories/  # Read-only catalog
+│       │       ├── orders/      # Checkout, history, cancel
 │       │       └── products/    # Read-only catalog
 │       └── admin/               # Admin-only area
 │           └── modules/
+│               ├── cart/        # Manage any user's cart
 │               ├── categories/  # Full CRUD
+│               ├── orders/      # Full order management
 │               └── products/    # Full CRUD
 ├── .env.example                 # Environment template
 ├── prisma.config.ts             # Prisma config (schema, migrations, DATABASE_URL)
@@ -297,10 +444,13 @@ flowchart LR
     E --> F[(Prisma → PostgreSQL)]
 ```
 
+
+
+
+
 ## Database Schema
 
 The schema is defined in `prisma/schema.prisma` and managed through versioned migrations.
-Cart and Order models are already in place ahead of their API implementation.
 
 ```mermaid
 erDiagram
@@ -341,6 +491,7 @@ erDiagram
         string id PK
         string categoryId FK
         string name
+        string description
         float price
         string image "nullable"
         boolean isAvailable
@@ -368,33 +519,42 @@ erDiagram
     }
 ```
 
+
+
+
+
 ## Environment Variables
 
 All variables are listed in `.env.example`. Copy it to `.env` and fill in the values.
 
-| Variable                | Description                                   | Example / Default                                        |
-| ----------------------- | --------------------------------------------- | -------------------------------------------------------- |
-| `NODE_ENV`              | Runtime environment                           | `development`                                            |
-| `PORT`                  | HTTP port                                     | `3000`                                                   |
-| `DATABASE_URL`          | PostgreSQL connection string                  | `postgresql://postgres:postgres@localhost:5432/restaurant-crm?schema=public` |
-| `ACCESS_TOKEN_SECRET`   | Secret for signing JWT access tokens          | — (required)                                             |
-| `REFRESH_TOKEN_LIFETIME`| Refresh token lifetime, in days               | `7`                                                      |
-| `COOKIE_SECRET`         | Secret for signing cookies                    | — (required)                                             |
-| `PASSWORD_SALT_ROUNDS`  | bcrypt cost factor                            | `12`                                                     |
-| `EMAIL_USER`            | Gmail address used to send emails             | `your-email@gmail.com`                                   |
-| `EMAIL_PASSWORD`        | Gmail app password                            | — (required)                                             |
+
+| Variable                 | Description                                     | Example / Default                                                            |
+| ------------------------ | ----------------------------------------------- | ---------------------------------------------------------------------------- |
+| `NODE_ENV`               | Runtime environment                             | `development`                                                                |
+| `PORT`                   | HTTP port                                       | `3000`                                                                       |
+| `DATABASE_URL`           | PostgreSQL connection string                    | `postgresql://postgres:postgres@localhost:5432/restaurant-crm?schema=public` |
+| `ACCESS_TOKEN_SECRET`    | Secret for signing JWT access tokens            | — (required)                                                                 |
+| `REFRESH_TOKEN_SECRET`   | Secret for hashing refresh tokens (HMAC-SHA512) | — (required)                                                                 |
+| `REFRESH_TOKEN_LIFETIME` | Refresh token lifetime, in days                 | `7`                                                                          |
+| `COOKIE_SECRET`          | Secret for signing cookies                      | — (required)                                                                 |
+| `PASSWORD_SALT_ROUNDS`   | bcrypt cost factor                              | `12`                                                                         |
+| `EMAIL_USER`             | Gmail address used to send emails               | `your-email@gmail.com`                                                       |
+| `EMAIL_PASSWORD`         | Gmail app password                              | — (required)                                                                 |
+
+
+
 
 ## Roadmap
 
-Planned features, roughly in priority order:
-
-- [ ] **Cart API** — the `Cart` / `CartItem` models exist; expose add / update / remove / view endpoints and auto-create a cart on registration
-- [ ] **Orders API** — checkout from the cart, order history for clients and status management for admins (`OrderStatus` lifecycle is already modeled)
-- [ ] **Logout / session revocation** — invalidate the refresh token and clear cookies
+- [x] **Cart API** — client and admin endpoints; cart auto-created on registration
+- [x] **Orders API** — checkout from cart, order history, admin status management
+- [x] **Logout / session revocation** — invalidate the refresh token and clear cookies
 - [ ] **Admin user management** — list, block and delete users (`UserStatus` enum is ready)
 - [ ] **OpenAPI / Swagger documentation** — generated from the Zod schemas
 - [ ] **Tests** — unit and integration coverage
 - [ ] **Docker support** — `Dockerfile` + `docker-compose` with PostgreSQL
+
+
 
 ## License
 

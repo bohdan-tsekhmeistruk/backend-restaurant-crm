@@ -3,7 +3,7 @@ import type { BlankInput } from "hono/types";
 import type { TServerContext } from "src/lib/dto/context.dto.js";
 import authService from "./auth.service.js";
 import { getConnInfo } from "@hono/node-server/conninfo";
-import { getSignedCookie, setSignedCookie } from "hono/cookie";
+import { getSignedCookie, setSignedCookie, deleteCookie } from "hono/cookie";
 import { env } from "hono/adapter";
 import type { TEnv } from "src/lib/dto/env.dto.js";
 import errorHandler from "src/lib/error.handler.js";
@@ -188,6 +188,36 @@ class AuthController {
           },
         ),
       ]);
+
+      return c.body(null, 204);
+    } catch (error) {
+      return errorHandler.handle(c, error);
+    }
+  }
+
+  /**
+   * Logs out a user and returns an empty response
+   * @param {Context<TServerContext, "/logout", BlankInput>} c - Context object
+   * @returns {Promise<Response>} Empty response with cleared auth cookies
+   * @throws {HTTPException} 500 - Internal server error
+   */
+  async logout(c: Context<TServerContext, "/logout", BlankInput>) {
+    try {
+      const prisma = c.get("prisma");
+      const envVars = env<TEnv>(c);
+
+      const refreshToken = await getSignedCookie(
+        c,
+        envVars.COOKIE_SECRET,
+        "refreshToken",
+      );
+      if (refreshToken) {
+        await authService.logout(prisma, refreshToken);
+      }
+
+      // Clear the cookies
+      deleteCookie(c, "accessToken", { path: "/" });
+      deleteCookie(c, "refreshToken", { path: "/" });
 
       return c.body(null, 204);
     } catch (error) {

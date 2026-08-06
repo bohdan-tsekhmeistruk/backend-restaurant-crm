@@ -224,6 +224,15 @@ class AuthService {
       refreshToken: rotatedSession.refreshToken,
     };
   }
+  /**
+   * Logs out a user by deleting the session of the given refresh token
+   * @param {PrismaClient} prisma - PrismaClient instance
+   * @param {string} refreshToken - Refresh token of the session to delete
+   * @returns {Promise<void>}
+   */
+  async logout(prisma: PrismaClient, refreshToken: string): Promise<void> {
+    await sessionsService.deleteSession(prisma, refreshToken);
+  }
 }
 
 export default new AuthService();
