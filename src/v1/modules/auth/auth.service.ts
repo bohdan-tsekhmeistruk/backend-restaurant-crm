@@ -14,7 +14,6 @@ import type {
   TRegisterParams,
 } from "./dto/auth.dto.js";
 import errorHandler from "src/lib/error.handler.js";
-import type { TValidatedUserResponse } from "src/lib/auth/interfaces/auth.interface.js";
 
 class AuthService {
   /**
@@ -52,19 +51,23 @@ class AuthService {
     // Delete the password from the user object to avoid sending it to the client
     delete (user as any).password;
 
-    // Get or create a new session
-    let session = await sessionsService.getSession(prisma, {
+    // Reuse the session of this device or create a new one
+    const deviceSession = await sessionsService.getDeviceSession(prisma, {
       userId: user.id,
-      ipAddress,
       userAgent,
     });
-    if (!session) {
-      session = await sessionsService.createSession(prisma, envVars, {
-        userId: user.id,
-        ipAddress,
-        userAgent,
-      });
-    }
+
+    // Rotate the refresh token of the existing session or create a new session
+    const session = deviceSession
+      ? await sessionsService.rotateSession(prisma, {
+          sessionId: deviceSession.id,
+          ipAddress,
+        })
+      : await sessionsService.createSession(prisma, {
+          userId: user.id,
+          ipAddress,
+          userAgent,
+        });
 
     // Generate the access token
     const accessToken = await jwtService.issueToken(
@@ -143,7 +146,7 @@ class AuthService {
     delete (newUser as any).password;
 
     // Create a new session
-    const session = await sessionsService.createSession(prisma, envVars, {
+    const session = await sessionsService.createSession(prisma, {
       userId: newUser.id,
       ipAddress,
       userAgent,
@@ -175,19 +178,40 @@ class AuthService {
   async refreshToken(
     prisma: PrismaClient,
     envVars: TEnv,
-    user: TValidatedUserResponse,
     { refreshToken, ipAddress, userAgent }: TRefreshTokenParams,
   ): Promise<TRefreshTokenResponse> {
     // Get the session by refresh token
-    const session = await sessionsService.getSession(prisma, {
-      userId: user.id,
+    const session = await sessionsService.getSessionByRefreshToken(
+      prisma,
       refreshToken,
-      ipAddress,
-      userAgent,
-    });
+    );
     if (!session) {
       throw errorHandler.httpError(401, "Unauthorized");
     }
+
+    // Check that the session is used from the same device
+    if (session.userAgent && session.userAgent !== userAgent) {
+      throw errorHandler.httpError(401, "Unauthorized");
+    }
+
+    // Check that the user still exists
+    const user = await prisma.user.findUnique({
+      where: {
+        id: session.userId,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!user) {
+      throw errorHandler.httpError(401, "Unauthorized");
+    }
+
+    // Rotate the refresh token and update the session IP address
+    const rotatedSession = await sessionsService.rotateSession(prisma, {
+      sessionId: session.id,
+      ipAddress,
+    });
 
     // Generate the access token
     const accessToken = await jwtService.issueToken(
@@ -197,7 +221,7 @@ class AuthService {
 
     return {
       accessToken: accessToken,
-      refreshToken: session.refreshToken,
+      refreshToken: rotatedSession.refreshToken,
     };
   }
 }

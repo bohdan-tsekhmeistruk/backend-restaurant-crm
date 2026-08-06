@@ -1,35 +1,59 @@
 import type { PrismaClient } from "src/generated/prisma/client.js";
 import jwtService from "src/v1/modules/auth/jwt.service.js";
-import type { TEnv } from "src/lib/dto/env.dto.js";
 import type {
   TCreateSessionParams,
-  TGetSessionParams,
+  TDeviceSession,
+  TGetDeviceSessionParams,
+  TRotateSessionParams,
+  TSession,
   TSessionResponse,
 } from "./dto/sessions.dto.js";
 
 class SessionsService {
   /**
-   * Gets a session by user ID, IP address, and user agent
+   * Gets a session by its refresh token
    * @param {PrismaClient} prisma - PrismaClient instance
-   * @param {TGetSessionParams} params - Session parameters
-   * @param {string} params.userId - User ID
-   * @param {string} params.refreshToken - Refresh token
-   * @param {string | undefined} params.ipAddress - User IP address
-   * @param {string | undefined} params.userAgent - User agent
-   * @returns {Promise<TSessionResponse | null>} Session object or null if not found
+   * @param {string} refreshToken - Refresh token
+   * @returns {Promise<TSession | null>} Session object or null if not found
    */
-  async getSession(
+  async getSessionByRefreshToken(
     prisma: PrismaClient,
-    { userId, refreshToken, ipAddress, userAgent }: TGetSessionParams,
-  ): Promise<TSessionResponse | null> {
+    refreshToken: string,
+  ): Promise<TSession | null> {
+    const session = await prisma.session.findUnique({
+      where: {
+        refreshToken,
+      },
+      select: {
+        id: true,
+        userId: true,
+        refreshToken: true,
+        ipAddress: true,
+        userAgent: true,
+      },
+    });
+    return session;
+  }
+
+  /**
+   * Gets a session of the user's device by user ID and user agent
+   * @param {PrismaClient} prisma - PrismaClient instance
+   * @param {TGetDeviceSessionParams} params - Session parameters
+   * @param {string} params.userId - User ID
+   * @param {string | undefined} params.userAgent - User agent
+   * @returns {Promise<TDeviceSession | null>} Session object or null if not found
+   */
+  async getDeviceSession(
+    prisma: PrismaClient,
+    { userId, userAgent }: TGetDeviceSessionParams,
+  ): Promise<TDeviceSession | null> {
     const session = await prisma.session.findFirst({
       where: {
         userId,
-        ...(refreshToken ? { refreshToken } : {}),
-        ipAddress,
-        userAgent,
+        userAgent: userAgent ?? null,
       },
       select: {
+        id: true,
         refreshToken: true,
       },
     });
@@ -41,20 +65,15 @@ class SessionsService {
    * @param {PrismaClient} prisma - PrismaClient instance
    * @param {TCreateSessionParams} params - Session parameters
    * @param {string} params.userId - User ID
-   * @param {number} params.expiresInDays - Number of days to expire the session
    * @param {string | undefined} params.ipAddress - User IP address
    * @param {string | undefined} params.userAgent - User agent
    * @returns {Promise<TSessionResponse>} Session object
    */
   async createSession(
     prisma: PrismaClient,
-    envVars: TEnv,
     { userId, ipAddress, userAgent }: TCreateSessionParams,
   ): Promise<TSessionResponse> {
-    const refreshToken = jwtService.issueRefreshToken(
-      userId,
-      envVars.REFRESH_TOKEN_SECRET,
-    );
+    const refreshToken = jwtService.issueRefreshToken();
 
     const session = await prisma.session.create({
       data: {
@@ -62,6 +81,38 @@ class SessionsService {
         refreshToken,
         ipAddress,
         userAgent,
+      },
+      select: {
+        refreshToken: true,
+      },
+    });
+
+    return {
+      refreshToken: session.refreshToken,
+    };
+  }
+
+  /**
+   * Rotates the refresh token of a session and updates its IP address
+   * @param {PrismaClient} prisma - PrismaClient instance
+   * @param {TRotateSessionParams} params - Rotation parameters
+   * @param {string} params.sessionId - Session ID
+   * @param {string | undefined} params.ipAddress - Current user IP address
+   * @returns {Promise<TSessionResponse>} Session object with the new refresh token
+   */
+  async rotateSession(
+    prisma: PrismaClient,
+    { sessionId, ipAddress }: TRotateSessionParams,
+  ): Promise<TSessionResponse> {
+    const refreshToken = jwtService.issueRefreshToken();
+
+    const session = await prisma.session.update({
+      where: {
+        id: sessionId,
+      },
+      data: {
+        refreshToken,
+        ipAddress,
       },
       select: {
         refreshToken: true,

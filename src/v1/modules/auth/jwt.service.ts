@@ -27,12 +27,10 @@ class JwtService {
 
   /**
    * Issues a refresh token
-   * @param {string} userId - The user ID
-   * @param {string} key - The key to hash the token
-   * @returns {Promise<string>} The refresh token using crypto
+   * @returns {string} A cryptographically random refresh token
    */
-  issueRefreshToken(userId: string, key: string): string {
-    return crypto.createHmac("sha512", key).update(userId).digest("hex");
+  issueRefreshToken(): string {
+    return crypto.randomBytes(64).toString("base64url");
   }
 
   /**

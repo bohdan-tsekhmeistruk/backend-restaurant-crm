@@ -378,7 +378,6 @@ All variables are listed in `.env.example`. Copy it to `.env` and fill in the va
 | `PORT`                  | HTTP port                                     | `3000`                                                   |
 | `DATABASE_URL`          | PostgreSQL connection string                  | `postgresql://postgres:postgres@localhost:5432/restaurant-crm?schema=public` |
 | `ACCESS_TOKEN_SECRET`   | Secret for signing JWT access tokens          | — (required)                                             |
-| `REFRESH_TOKEN_SECRET`  | Secret for hashing refresh tokens (HMAC-SHA512) | — (required)                                           |
 | `REFRESH_TOKEN_LIFETIME`| Refresh token lifetime, in days               | `7`                                                      |
 | `COOKIE_SECRET`         | Secret for signing cookies                    | — (required)                                             |
 | `PASSWORD_SALT_ROUNDS`  | bcrypt cost factor                            | `12`                                                     |

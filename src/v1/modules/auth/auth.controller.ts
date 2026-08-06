@@ -143,10 +143,6 @@ class AuthController {
       const prisma = c.get("prisma");
       const connInfo = getConnInfo(c);
       const envVars = env<TEnv>(c);
-      const user = c.get("user");
-      if (!user) {
-        return c.json({ message: "Unauthorized" }, 401);
-      }
 
       const refreshToken = await getSignedCookie(
         c,
@@ -157,26 +153,41 @@ class AuthController {
         return c.json({ message: "Unauthorized" }, 401);
       }
 
-      const response = await authService.refreshToken(prisma, envVars, user, {
+      const response = await authService.refreshToken(prisma, envVars, {
         refreshToken,
         ipAddress: connInfo.remote.address,
         userAgent: c.req.header("user-agent"),
       });
 
       // Set the cookies
-      await setSignedCookie(
-        c,
-        "accessToken",
-        response.accessToken,
-        envVars.COOKIE_SECRET,
-        {
-          httpOnly: true,
-          secure: envVars.NODE_ENV === "production",
-          maxAge: 15 * 60, // 15 minutes
-          path: "/",
-          sameSite: "strict",
-        },
-      );
+      await Promise.all([
+        setSignedCookie(
+          c,
+          "accessToken",
+          response.accessToken,
+          envVars.COOKIE_SECRET,
+          {
+            httpOnly: true,
+            secure: envVars.NODE_ENV === "production",
+            maxAge: 15 * 60, // 15 minutes
+            path: "/",
+            sameSite: "strict",
+          },
+        ),
+        setSignedCookie(
+          c,
+          "refreshToken",
+          response.refreshToken,
+          envVars.COOKIE_SECRET,
+          {
+            httpOnly: true,
+            secure: envVars.NODE_ENV === "production",
+            maxAge: 7 * 24 * 60 * 60, // 7 days
+            path: "/",
+            sameSite: "strict",
+          },
+        ),
+      ]);
 
       return c.body(null, 204);
     } catch (error) {

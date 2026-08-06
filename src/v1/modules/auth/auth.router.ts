@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { validator } from "hono/validator";
 import authController from "./auth.controller.js";
 import { z } from "zod";
-import { AuthMiddleware } from "src/lib/auth/auth.middleware.js";
 
 const authRouter = new Hono();
 
@@ -50,6 +49,6 @@ authRouter.post(
   authController.register,
 );
 
-authRouter.post("/refresh-token", AuthMiddleware, authController.refreshToken);
+authRouter.post("/refresh-token", authController.refreshToken);
 
 export default authRouter;
