@@ -15,8 +15,6 @@ categories, a shopping cart, and a complete order lifecycle from checkout to del
 
 ---
 
-
-
 ## Table of Contents
 
 - [Features](#features)
@@ -377,18 +375,17 @@ signed `httpOnly` cookies) — no `Authorization` header is required.
 
 `/api/v1/admin/users`
 
-| Method | Endpoint | Access | Description                                                    |
-| ------ | -------- | ------ | -------------------------------------------------------------- |
-| GET    | `/`      | Admin  | Search users (`email`, `name`, `role`, `status`, `page`, `limit`) |
-| GET    | `/:id`   | Admin  | Get user by UUID                                               |
+
+| Method | Endpoint | Access | Description                                                                                 |
+| ------ | -------- | ------ | ------------------------------------------------------------------------------------------- |
+| GET    | `/`      | Admin  | Search users (`email`, `name`, `role`, `status`, `page`, `limit`)                           |
+| GET    | `/:id`   | Admin  | Get user by UUID                                                                            |
 | PATCH  | `/:id`   | Admin  | Update user (`firstName`, `lastName`, `phone`, `role`, `status`); sessions revoked on block |
-| DELETE | `/:id`   | Admin  | Soft-delete user (`status` → `DELETED`), sessions revoked (204) |
+| DELETE | `/:id`   | Admin  | Soft-delete user (`status` → `DELETED`), sessions revoked (204)                             |
+
 
 Admins cannot change their own `status` / `role` or delete their own account. Non-`ACTIVE`
 accounts are rejected on login, token refresh and by the auth middleware on every request.
-
-
-
 
 ## Order Lifecycle
 
