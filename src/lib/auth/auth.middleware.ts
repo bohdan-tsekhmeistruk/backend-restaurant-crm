@@ -5,7 +5,7 @@ import type { TEnv } from "src/lib/dto/env.dto.js";
 import { env } from "hono/adapter";
 import jwtService from "src/v1/modules/auth/jwt.service.js";
 import errorHandler from "src/lib/error.handler.js";
-import { UserRole } from "src/generated/prisma/client.js";
+import { UserRole, UserStatus } from "src/generated/prisma/client.js";
 import type { TValidatedUserResponse } from "./interfaces/auth.interface.js";
 
 /**
@@ -97,6 +97,11 @@ async function _validateToken(
   });
   if (!user) {
     throw errorHandler.httpError(401, "Unauthorized");
+  }
+
+  // Reject blocked or deleted accounts even with a valid token
+  if (user.status !== UserStatus.ACTIVE) {
+    throw errorHandler.httpError(403, "Account is not active");
   }
 
   // Set the user in the context

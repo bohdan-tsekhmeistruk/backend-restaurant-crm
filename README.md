@@ -36,6 +36,7 @@ categories, a shopping cart, and a complete order lifecycle from checkout to del
   - [Catalog (admin)](#catalog-admin)
   - [Cart (admin)](#cart-admin)
   - [Orders (admin)](#orders-admin)
+  - [Users (admin)](#users-admin)
 - [Order Lifecycle](#order-lifecycle)
 - [Project Structure](#project-structure)
 - [Database Schema](#database-schema)
@@ -76,6 +77,10 @@ product on an existing cart item.
 view order history, cancel a `PENDING` order.
 - **Orders (admin)** — search orders, create orders for any user, update status to any
 `OrderStatus`, hard-delete orders.
+- **Admin user management** — list users with filters, edit profile fields and roles,
+block / unblock and soft-delete accounts (`UserStatus`). Blocking or deleting revokes all
+sessions, and non-`ACTIVE` accounts are rejected on login, token refresh and every
+authenticated request.
 - **Rate limiting** — 30 requests per 10 minutes on all `/auth/`* routes (`hono-rate-limiter`).
 - **Security** — bcrypt password hashing, Zod validation on every input, centralized error
 handling, typed environment config.
@@ -84,9 +89,9 @@ handling, typed environment config.
 
 ### Coming soon
 
-- **Logout / session revocation** — invalidate the refresh token and clear cookies.
-- **Admin user management** — list, block and delete users (`UserStatus` enum is already in
-the schema but not enforced in the application layer).
+- **OpenAPI / Swagger documentation** — generated from the Zod schemas.
+- **Tests** — unit and integration coverage.
+- **Docker support** — `Dockerfile` + `docker-compose` with PostgreSQL.
 
 See the full [Roadmap](#roadmap) below.
 
@@ -368,6 +373,23 @@ signed `httpOnly` cookies) — no `Authorization` header is required.
 
 
 
+### Users (admin)
+
+`/api/v1/admin/users`
+
+| Method | Endpoint | Access | Description                                                    |
+| ------ | -------- | ------ | -------------------------------------------------------------- |
+| GET    | `/`      | Admin  | Search users (`email`, `name`, `role`, `status`, `page`, `limit`) |
+| GET    | `/:id`   | Admin  | Get user by UUID                                               |
+| PATCH  | `/:id`   | Admin  | Update user (`firstName`, `lastName`, `phone`, `role`, `status`); sessions revoked on block |
+| DELETE | `/:id`   | Admin  | Soft-delete user (`status` → `DELETED`), sessions revoked (204) |
+
+Admins cannot change their own `status` / `role` or delete their own account. Non-`ACTIVE`
+accounts are rejected on login, token refresh and by the auth middleware on every request.
+
+
+
+
 ## Order Lifecycle
 
 Orders progress through the following statuses:
@@ -426,7 +448,8 @@ backend-restaurant-crm/
 │               ├── cart/        # Manage any user's cart
 │               ├── categories/  # Full CRUD
 │               ├── orders/      # Full order management
-│               └── products/    # Full CRUD
+│               ├── products/    # Full CRUD
+│               └── users/       # User management (list, block, delete)
 ├── .env.example                 # Environment template
 ├── prisma.config.ts             # Prisma config (schema, migrations, DATABASE_URL)
 ├── package.json
@@ -549,7 +572,7 @@ All variables are listed in `.env.example`. Copy it to `.env` and fill in the va
 - [x] **Cart API** — client and admin endpoints; cart auto-created on registration
 - [x] **Orders API** — checkout from cart, order history, admin status management
 - [x] **Logout / session revocation** — invalidate the refresh token and clear cookies
-- [ ] **Admin user management** — list, block and delete users (`UserStatus` enum is ready)
+- [x] **Admin user management** — list, block and delete users (`UserStatus` enforced in the application layer)
 - [ ] **OpenAPI / Swagger documentation** — generated from the Zod schemas
 - [ ] **Tests** — unit and integration coverage
 - [ ] **Docker support** — `Dockerfile` + `docker-compose` with PostgreSQL

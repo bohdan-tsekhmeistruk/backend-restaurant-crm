@@ -1,4 +1,7 @@
-import type { PrismaClient } from "src/generated/prisma/client.js";
+import {
+  UserStatus,
+  type PrismaClient,
+} from "src/generated/prisma/client.js";
 import {
   UserAuthSelect,
   type TAuthResponse,
@@ -46,6 +49,11 @@ class AuthService {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw errorHandler.httpError(401, "Invalid credentials");
+    }
+
+    // Reject blocked or deleted accounts
+    if (user.status !== UserStatus.ACTIVE) {
+      throw errorHandler.httpError(403, "Account is not active");
     }
 
     // Delete the password from the user object to avoid sending it to the client
@@ -194,17 +202,21 @@ class AuthService {
       throw errorHandler.httpError(401, "Unauthorized");
     }
 
-    // Check that the user still exists
+    // Check that the user still exists and is active
     const user = await prisma.user.findUnique({
       where: {
         id: session.userId,
       },
       select: {
         id: true,
+        status: true,
       },
     });
     if (!user) {
       throw errorHandler.httpError(401, "Unauthorized");
+    }
+    if (user.status !== UserStatus.ACTIVE) {
+      throw errorHandler.httpError(403, "Account is not active");
     }
 
     // Rotate the refresh token and update the session IP address
