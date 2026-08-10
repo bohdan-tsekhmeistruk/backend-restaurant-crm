@@ -25,6 +25,7 @@ categories, a shopping cart, and a complete order lifecycle from checkout to del
   - [Database Setup](#database-setup)
   - [Running the Server](#running-the-server)
 - [Usage](#usage)
+- [Docker](#docker)
 - [API Reference](#api-reference)
   - [Auth](#auth)
   - [Account (client)](#account-client)
@@ -83,6 +84,8 @@ authenticated request.
 - **OpenAPI / Swagger documentation** — the OpenAPI 3.0 spec is generated at runtime from the
 same Zod schemas that validate the requests (`@hono/zod-openapi`), served at `/doc` with an
 interactive Swagger UI at `/docs`.
+- **Docker support** — multi-stage `Dockerfile` (build → slim runtime) and `docker-compose.yml`
+with PostgreSQL; the app container applies migrations automatically on startup.
 - **Security** — bcrypt password hashing, Zod validation on every input, centralized error
 handling, typed environment config.
 
@@ -91,7 +94,6 @@ handling, typed environment config.
 ### Coming soon
 
 - **Tests** — unit and integration coverage.
-- **Docker support** — `Dockerfile` + `docker-compose` with PostgreSQL.
 
 See the full [Roadmap](#roadmap) below.
 
@@ -243,6 +245,47 @@ View order history:
 curl "http://localhost:3000/api/v1/orders?status=PENDING&page=1&limit=20" \
   -b cookies.txt
 ```
+
+
+
+## Docker
+
+Run the whole stack (API + PostgreSQL) with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+Compose reads secrets from your `.env` automatically (variable interpolation) — make sure
+`ACCESS_TOKEN_SECRET` and `COOKIE_SECRET` are set there. The app container waits for the
+database health check, applies migrations (`prisma migrate deploy`) and starts the server.
+`DATABASE_URL` is overridden to point at the `db` service, so the localhost-based value in
+`.env` keeps working for local development.
+
+- API: [http://localhost:3000/](http://localhost:3000/) — Swagger UI at
+[http://localhost:3000/docs](http://localhost:3000/docs)
+- PostgreSQL: `localhost:5432` (credentials: `postgres` / `postgres`, override via
+`POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB`)
+
+Useful commands:
+
+```bash
+docker compose up -d --build   # detached
+docker compose logs -f app     # follow API logs
+docker compose down            # stop (database volume is preserved)
+docker compose down -v         # stop and wipe the database volume
+```
+
+To build the image without Compose:
+
+```bash
+docker build -t restaurant-crm .
+docker run --env-file .env -p 3000:3000 restaurant-crm
+```
+
+Note: the production image defaults to `NODE_ENV=production`, which marks auth cookies as
+`Secure` (HTTPS only). Compose overrides it with the `NODE_ENV` value from your `.env`
+(`development` by default) so plain HTTP works locally.
 
 
 
@@ -459,6 +502,8 @@ backend-restaurant-crm/
 │               └── users/       # User management (list, block, delete)
 ├── .env.example                 # Environment template
 ├── prisma.config.ts             # Prisma config (schema, migrations, DATABASE_URL)
+├── Dockerfile                   # Multi-stage image (build → slim runtime)
+├── docker-compose.yml           # API + PostgreSQL orchestration
 ├── package.json
 └── tsconfig.json
 ```
@@ -581,8 +626,8 @@ All variables are listed in `.env.example`. Copy it to `.env` and fill in the va
 - [x] **Logout / session revocation** — invalidate the refresh token and clear cookies
 - [x] **Admin user management** — list, block and delete users (`UserStatus` enforced in the application layer)
 - [x] **OpenAPI / Swagger documentation** — generated from the Zod schemas (`/doc` + Swagger UI at `/docs`)
+- [x] **Docker support** — `Dockerfile` + `docker-compose` with PostgreSQL, auto-migrations on startup
 - [ ] **Tests** — unit and integration coverage
-- [ ] **Docker support** — `Dockerfile` + `docker-compose` with PostgreSQL
 
 
 
