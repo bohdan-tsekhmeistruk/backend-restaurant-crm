@@ -38,6 +38,7 @@ categories, a shopping cart, and a complete order lifecycle from checkout to del
   - [Users (admin)](#users-admin)
 - [Order Lifecycle](#order-lifecycle)
 - [Project Structure](#project-structure)
+- [Testing](#testing)
 - [Database Schema](#database-schema)
 - [Environment Variables](#environment-variables)
 - [Roadmap](#roadmap)
@@ -86,14 +87,10 @@ same Zod schemas that validate the requests (`@hono/zod-openapi`), served at `/d
 interactive Swagger UI at `/docs`.
 - **Docker support** — multi-stage `Dockerfile` (build → slim runtime) and `docker-compose.yml`
 with PostgreSQL; the app container applies migrations automatically on startup.
+- **Tests** — 300+ unit tests for services, middleware and Zod schemas, plus a full-lifecycle
+E2E test, all running on Vitest with ~97% line coverage.
 - **Security** — bcrypt password hashing, Zod validation on every input, centralized error
 handling, typed environment config.
-
-
-
-### Coming soon
-
-- **Tests** — unit and integration coverage.
 
 See the full [Roadmap](#roadmap) below.
 
@@ -112,6 +109,7 @@ See the full [Roadmap](#roadmap) below.
 | Auth          | JWT (`hono/jwt`), signed cookies, bcrypt                 |
 | Email         | Nodemailer (Gmail SMTP)                                  |
 | Rate limiting | `hono-rate-limiter`                                      |
+| Testing       | [Vitest](https://vitest.dev) + V8 coverage               |
 | Dev tooling   | `tsx watch`, `tsc`                                       |
 
 
@@ -196,11 +194,14 @@ generated from the Zod schemas
 ## Usage
 
 
-| Command         | Description                          |
-| --------------- | ------------------------------------ |
-| `npm run dev`   | Start the dev server with hot reload |
-| `npm run build` | Compile TypeScript into `dist/`      |
-| `npm start`     | Run the compiled server from `dist/` |
+| Command              | Description                                |
+| -------------------- | ------------------------------------------ |
+| `npm run dev`        | Start the dev server with hot reload       |
+| `npm run build`      | Compile TypeScript into `dist/`            |
+| `npm start`          | Run the compiled server from `dist/`       |
+| `npm test`           | Run the full test suite (Vitest)           |
+| `npm run test:watch` | Run tests in watch mode                    |
+| `npm run test:coverage` | Run tests with a V8 coverage report     |
 
 
 Prisma CLI (not wrapped in npm scripts):
@@ -470,7 +471,8 @@ backend-restaurant-crm/
 │   ├── schema.prisma            # Data models, enums and relations
 │   └── migrations/              # Versioned SQL migrations
 ├── src/
-│   ├── index.ts                 # App entry point (server bootstrap)
+│   ├── index.ts                 # Server bootstrap (serve)
+│   ├── app.ts                   # Hono app definition (imported by tests)
 │   ├── generated/prisma/        # Generated Prisma client
 │   ├── lib/                     # Shared cross-cutting concerns
 │   │   ├── prisma.ts            # Prisma client singleton (pg adapter)
@@ -500,6 +502,10 @@ backend-restaurant-crm/
 │               ├── orders/      # Full order management
 │               ├── products/    # Full CRUD
 │               └── users/       # User management (list, block, delete)
+├── tests/
+│   ├── unit/                    # Vitest unit tests (services, middleware, DTOs)
+│   ├── e2e/                     # Full API lifecycle test (in-memory Prisma)
+│   └── helpers/                 # Prisma mocks, in-memory fake, HTTP helpers
 ├── .env.example                 # Environment template
 ├── prisma.config.ts             # Prisma config (schema, migrations, DATABASE_URL)
 ├── Dockerfile                   # Multi-stage image (build → slim runtime)
@@ -518,6 +524,33 @@ flowchart LR
     D --> E[Service]
     E --> F[(Prisma → PostgreSQL)]
 ```
+
+## Testing
+
+The project is covered by [Vitest](https://vitest.dev) tests — no database, Docker or SMTP
+server is required to run them.
+
+```bash
+npm test                # run the full suite once
+npm run test:watch      # watch mode
+npm run test:coverage   # V8 coverage report (text + HTML in coverage/)
+```
+
+What is covered:
+
+- **Unit tests** (`tests/unit/`) — every service (auth, jwt, sessions, email, account, cart,
+  categories, products, orders, users — both client and admin), the auth middleware, the
+  centralized error handler, the template renderer and all Zod schemas. External boundaries
+  (Prisma, Nodemailer) are replaced with per-test mocks (`tests/helpers/prisma-mock.ts`).
+- **E2E test** (`tests/e2e/app.e2e.test.ts`) — a single full-lifecycle scenario that drives
+  the real Hono app through `app.request()`: registration → login → email verification →
+  admin catalog setup → cart → checkout → order status flow → password reset → token
+  rotation / logout → blocking and soft-deleting a user. PostgreSQL is replaced by a
+  stateful in-memory Prisma fake (`tests/helpers/in-memory-prisma.ts`) and emails are
+  intercepted, so the whole flow runs hermetically in a few seconds.
+
+The Hono app itself lives in `src/app.ts` (separate from the `serve()` bootstrap in
+`src/index.ts`) so tests can import it without opening a port.
 
 
 
@@ -627,7 +660,7 @@ All variables are listed in `.env.example`. Copy it to `.env` and fill in the va
 - [x] **Admin user management** — list, block and delete users (`UserStatus` enforced in the application layer)
 - [x] **OpenAPI / Swagger documentation** — generated from the Zod schemas (`/doc` + Swagger UI at `/docs`)
 - [x] **Docker support** — `Dockerfile` + `docker-compose` with PostgreSQL, auto-migrations on startup
-- [ ] **Tests** — unit and integration coverage
+- [x] **Tests** — unit tests for all services / middleware / schemas + a full-lifecycle E2E test (Vitest, ~97% line coverage)
 
 
 

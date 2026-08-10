@@ -30,4 +30,7 @@ lerna-debug.log*
 # build
 dist/
 
+# test coverage
+coverage/
+
 src/generated/prisma
