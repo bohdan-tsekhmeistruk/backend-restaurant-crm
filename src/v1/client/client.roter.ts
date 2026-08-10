@@ -1,11 +1,12 @@
-import { Hono } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import type { TServerContext } from "src/lib/dto/context.dto.js";
 import accountRouter from "./modules/account/account.router.js";
 import cartRouter from "./modules/cart/cart.router.js";
 import categoriesRouter from "./modules/categories/categories.router.js";
 import ordersRouter from "./modules/orders/orders.router.js";
 import productsRouter from "./modules/products/products.router.js";
 
-const clientRouter = new Hono();
+const clientRouter = new OpenAPIHono<TServerContext>();
 
 clientRouter.route("/account", accountRouter);
 clientRouter.route("/cart", cartRouter);

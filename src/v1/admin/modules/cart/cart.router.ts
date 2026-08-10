@@ -1,6 +1,12 @@
-import { Hono } from "hono";
+import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
+import type { TServerContext } from "src/lib/dto/context.dto.js";
+import {
+  AdminCartSchema,
+  cookieSecurity,
+  errorResponse,
+  jsonContent,
+} from "src/lib/openapi.js";
 import cartController from "./cart.controller.js";
-import { sValidator } from "@hono/standard-validator";
 import {
   TAddUserCartItemBody,
   TCartItemParams,
@@ -8,29 +14,102 @@ import {
   TUserIdParam,
 } from "./dto/cart.dto.js";
 
-const cartRouter = new Hono();
+const cartRouter = new OpenAPIHono<TServerContext>();
 
-cartRouter.get(
-  "/:userId",
-  sValidator("param", TUserIdParam),
-  cartController.getUserCart,
+const getUserCartRoute = createRoute({
+  method: "get",
+  path: "/{userId}",
+  tags: ["Admin Cart"],
+  summary: "Get a user's cart",
+  description: "Returns the user's cart, creating it on first access.",
+  security: cookieSecurity,
+  request: {
+    params: TUserIdParam,
+  },
+  responses: {
+    200: jsonContent(AdminCartSchema, "The user's cart"),
+    400: errorResponse("Validation error"),
+    401: errorResponse("Unauthorized"),
+    403: errorResponse("Admin access required"),
+    404: errorResponse("User not found"),
+  },
+});
+
+const addUserCartItemRoute = createRoute({
+  method: "post",
+  path: "/{userId}/items",
+  tags: ["Admin Cart"],
+  summary: "Add item to a user's cart",
+  description:
+    "Adds a product to the user's cart. Adding an existing product increments its quantity.",
+  security: cookieSecurity,
+  request: {
+    params: TUserIdParam,
+    body: {
+      required: true,
+      content: { "application/json": { schema: TAddUserCartItemBody } },
+    },
+  },
+  responses: {
+    201: jsonContent(AdminCartSchema, "The updated cart"),
+    400: errorResponse("Validation error or product is not available"),
+    401: errorResponse("Unauthorized"),
+    403: errorResponse("Admin access required"),
+    404: errorResponse("User or product not found"),
+  },
+});
+
+const updateUserCartItemRoute = createRoute({
+  method: "patch",
+  path: "/{userId}/items/{itemId}",
+  tags: ["Admin Cart"],
+  summary: "Update a cart item",
+  description:
+    "Updates the quantity and/or the product of an existing cart item.",
+  security: cookieSecurity,
+  request: {
+    params: TCartItemParams,
+    body: {
+      required: true,
+      content: { "application/json": { schema: TUpdateUserCartItemBody } },
+    },
+  },
+  responses: {
+    200: jsonContent(AdminCartSchema, "The updated cart"),
+    400: errorResponse("Validation error or product is not available"),
+    401: errorResponse("Unauthorized"),
+    403: errorResponse("Admin access required"),
+    404: errorResponse("Cart item or product not found"),
+  },
+});
+
+const deleteUserCartItemRoute = createRoute({
+  method: "delete",
+  path: "/{userId}/items/{itemId}",
+  tags: ["Admin Cart"],
+  summary: "Remove a cart item",
+  security: cookieSecurity,
+  request: {
+    params: TCartItemParams,
+  },
+  responses: {
+    200: jsonContent(AdminCartSchema, "The updated cart"),
+    400: errorResponse("Validation error"),
+    401: errorResponse("Unauthorized"),
+    403: errorResponse("Admin access required"),
+    404: errorResponse("Cart item not found"),
+  },
+});
+
+cartRouter.openapi(getUserCartRoute, (c) => cartController.getUserCart(c));
+cartRouter.openapi(addUserCartItemRoute, (c) =>
+  cartController.addUserCartItem(c),
 );
-cartRouter.post(
-  "/:userId/items",
-  sValidator("param", TUserIdParam),
-  sValidator("json", TAddUserCartItemBody),
-  cartController.addUserCartItem,
+cartRouter.openapi(updateUserCartItemRoute, (c) =>
+  cartController.updateUserCartItem(c),
 );
-cartRouter.patch(
-  "/:userId/items/:itemId",
-  sValidator("param", TCartItemParams),
-  sValidator("json", TUpdateUserCartItemBody),
-  cartController.updateUserCartItem,
-);
-cartRouter.delete(
-  "/:userId/items/:itemId",
-  sValidator("param", TCartItemParams),
-  cartController.deleteUserCartItem,
+cartRouter.openapi(deleteUserCartItemRoute, (c) =>
+  cartController.deleteUserCartItem(c),
 );
 
 export default cartRouter;

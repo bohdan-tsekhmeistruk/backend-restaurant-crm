@@ -1,5 +1,5 @@
 import { getConnInfo } from "@hono/node-server/conninfo";
-import { Hono } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import { rateLimiter } from "hono-rate-limiter";
 import type { TServerContext } from "src/lib/dto/context.dto.js";
@@ -7,7 +7,7 @@ import authRouter from "src/v1/modules/auth/auth.router.js";
 import clientRouter from "./client/client.roter.js";
 import adminRouter from "./admin/admin.roter.js";
 
-const v1Router = new Hono();
+const v1Router = new OpenAPIHono<TServerContext>();
 
 v1Router.route("/", clientRouter);
 v1Router.route("/admin", adminRouter);

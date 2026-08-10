@@ -80,6 +80,9 @@ block / unblock and soft-delete accounts (`UserStatus`). Blocking or deleting re
 sessions, and non-`ACTIVE` accounts are rejected on login, token refresh and every
 authenticated request.
 - **Rate limiting** — 30 requests per 10 minutes on all `/auth/`* routes (`hono-rate-limiter`).
+- **OpenAPI / Swagger documentation** — the OpenAPI 3.0 spec is generated at runtime from the
+same Zod schemas that validate the requests (`@hono/zod-openapi`), served at `/doc` with an
+interactive Swagger UI at `/docs`.
 - **Security** — bcrypt password hashing, Zod validation on every input, centralized error
 handling, typed environment config.
 
@@ -87,7 +90,6 @@ handling, typed environment config.
 
 ### Coming soon
 
-- **OpenAPI / Swagger documentation** — generated from the Zod schemas.
 - **Tests** — unit and integration coverage.
 - **Docker support** — `Dockerfile` + `docker-compose` with PostgreSQL.
 
@@ -101,7 +103,8 @@ See the full [Roadmap](#roadmap) below.
 | Runtime       | Node.js (ESM)                                            |
 | Language      | TypeScript (strict mode, NodeNext modules)               |
 | Framework     | [Hono](https://hono.dev) + `@hono/node-server`           |
-| Validation    | [Zod](https://zod.dev) + `@hono/standard-validator`      |
+| Validation    | [Zod](https://zod.dev) + `@hono/zod-openapi`             |
+| API docs      | OpenAPI 3.0 (`/doc`) + Swagger UI (`/docs`)              |
 | ORM           | [Prisma 7](https://www.prisma.io) (`@prisma/adapter-pg`) |
 | Database      | PostgreSQL                                               |
 | Auth          | JWT (`hono/jwt`), signed cookies, bcrypt                 |
@@ -181,6 +184,12 @@ npm start
 
 The API health check is available at [http://localhost:3000/](http://localhost:3000/) —
 it should respond with `{ "message": "Api is ready!" }`.
+
+API documentation:
+
+- [http://localhost:3000/doc](http://localhost:3000/doc) — the OpenAPI 3.0 specification (JSON),
+generated from the Zod schemas
+- [http://localhost:3000/docs](http://localhost:3000/docs) — interactive Swagger UI
 
 ## Usage
 
@@ -423,6 +432,7 @@ backend-restaurant-crm/
 │   ├── lib/                     # Shared cross-cutting concerns
 │   │   ├── prisma.ts            # Prisma client singleton (pg adapter)
 │   │   ├── error.handler.ts     # Centralized error handling
+│   │   ├── openapi.ts           # Shared OpenAPI schemas, helpers, validation hook
 │   │   ├── templates.service.ts # {{placeholder}} template renderer
 │   │   ├── auth/                # Auth middleware + interfaces
 │   │   ├── dto/                 # Context / env / template types
@@ -570,7 +580,7 @@ All variables are listed in `.env.example`. Copy it to `.env` and fill in the va
 - [x] **Orders API** — checkout from cart, order history, admin status management
 - [x] **Logout / session revocation** — invalidate the refresh token and clear cookies
 - [x] **Admin user management** — list, block and delete users (`UserStatus` enforced in the application layer)
-- [ ] **OpenAPI / Swagger documentation** — generated from the Zod schemas
+- [x] **OpenAPI / Swagger documentation** — generated from the Zod schemas (`/doc` + Swagger UI at `/docs`)
 - [ ] **Tests** — unit and integration coverage
 - [ ] **Docker support** — `Dockerfile` + `docker-compose` with PostgreSQL
 
