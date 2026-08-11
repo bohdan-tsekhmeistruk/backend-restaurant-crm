@@ -1,5 +1,11 @@
 # Backend Restaurant CRM
 
+[![CI](https://github.com/bohdan-tsekhmeistruk/backend-restaurant-crm/actions/workflows/ci.yml/badge.svg)](https://github.com/bohdan-tsekhmeistruk/backend-restaurant-crm/actions/workflows/ci.yml)
+
+![Tests](https://img.shields.io/badge/tests-318%20passing-brightgreen)
+![TypeScript](https://img.shields.io/badge/TypeScript-7.0-blue)
+![Node.js](https://img.shields.io/badge/Node.js-22-green)
+
 Version
 License: MIT
 Node.js
