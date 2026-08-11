@@ -10,13 +10,13 @@ import type { TValidatedUserResponse } from "./interfaces/auth.interface.js";
 
 /**
  * Middleware to authenticate the user
- * @param {Context<TServerContext, any, {}>} c - The context
+ * @param {Context<TServerContext, any>} c - The context
  * @param {Next} next - The next middleware/handler
  * @returns {Promise<void | Response>} The next middleware/handler
  * @throws {HTTPException} If the user is not authenticated
  */
 export async function AuthMiddleware(
-  c: Context<TServerContext, any, {}>,
+  c: Context<TServerContext, any>,
   next: Next,
 ): Promise<void | Response> {
   // Validate the token
@@ -34,7 +34,7 @@ export async function AuthMiddleware(
 }
 
 export async function AdminAuthMiddleware(
-  c: Context<TServerContext, any, {}>,
+  c: Context<TServerContext, any>,
   next: Next,
 ): Promise<void | Response> {
   // Validate the token
@@ -53,12 +53,12 @@ export async function AdminAuthMiddleware(
 
 /**
  * Validate the token
- * @param {Context<TServerContext, any, {}>} c - The context
+ * @param {Context<TServerContext, any>} c - The context
  * @returns {Promise<TValidatedUserResponse>} Object of the user
  * @throws {HTTPException} If the user is not authenticated
  */
 async function _validateToken(
-  c: Context<TServerContext, any, {}>,
+  c: Context<TServerContext, any>,
 ): Promise<TValidatedUserResponse> {
   // Get the Prisma client
   const prisma = c.get("prisma");

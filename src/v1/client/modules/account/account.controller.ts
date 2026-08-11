@@ -3,9 +3,7 @@ import type { BlankInput } from "hono/types";
 import type { TServerContext } from "src/lib/dto/context.dto.js";
 import errorHandler from "src/lib/error.handler.js";
 import type {
-  TUpdateAccountBody,
   TUpdateAccountInput,
-  TCheckEmailVerificationBody,
   TCheckEmailVerificationInput,
   TCheckPasswordResetInput,
   TSendPasswordResetInput,

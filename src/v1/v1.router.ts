@@ -18,7 +18,7 @@ v1Router.use(
   rateLimiter({
     windowMs: 10 * 60 * 1000, // 10 minutes
     limit: 30, // Limit each client to 30 requests per window
-    keyGenerator: (c: Context<TServerContext, any, {}>) => {
+    keyGenerator: (c: Context<TServerContext, any>) => {
       const connInfo = getConnInfo(c);
       const ipAddress = connInfo.remote.address;
       const userAgent = c.req.header("user-agent") ?? undefined;
@@ -31,7 +31,7 @@ v1Router.use(
       }
       return Promise.resolve(ipAddress ?? "");
     },
-    message: (c) => ({
+    message: (_c) => ({
       message: "Rate limit exceeded",
     }),
   }),

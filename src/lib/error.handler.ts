@@ -30,11 +30,11 @@ class ErrorHandler {
 
   /**
    * Handles an error
-   * @param {Context<TServerContext, any, {}>} c - The context
+   * @param {Context<TServerContext, any>} c - The context
    * @param {any} error - The error
    * @returns {Response} The response or the HTTP exception response
    */
-  handle(c: Context<TServerContext, any, {}>, error: any): Response {
+  handle(c: Context<TServerContext, any>, error: any): Response {
     console.error("Error:", error);
     // Handle HTTP exceptions
     if (error instanceof HTTPException) {
